@@ -10,6 +10,11 @@ Leiningen 2.0 or above
 PostgreSQL
 
 ## Development
+PostgreSQL Database setup:
+
+    CREATE USER gallery WITH PASSWORD 'pictures';
+    CREATE DATABASE picture_gallery_dev OWNER gallery;
+
 Database initialization:
 
     lein run migrate
