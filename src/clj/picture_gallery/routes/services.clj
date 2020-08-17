@@ -1,0 +1,84 @@
+(ns picture-gallery.routes.services
+  (:require [picture-gallery.routes.services.auth :as auth]
+            [picture-gallery.routes.services.upload :as upload]
+            [picture-gallery.routes.services.gallery :as gallery]
+            [ring.util.http-response :refer :all]
+            [compojure.api.sweet :refer :all]
+            [compojure.api.upload :refer :all]
+            [schema.core :as s]))
+
+(s/defschema UserRegistration
+  {:id           String
+   :pass         String
+   :pass-confirm String})
+
+(s/defschema Result
+  {:result s/Keyword
+   (s/optional-key :message) String})
+
+(s/defschema Gallery
+ {:owner               String
+  :name                String
+  (s/optional-key :rk) s/Num})
+
+(defapi service-routes
+  {:swagger {:ui "/swagger-ui"
+             :spec "/swagger.json"
+             :data {:info {:version "1.0.0"
+                           :title "Sample API"
+                           :description "Sample Services"}}}}
+
+  (POST "/register" req
+    :return      Result
+    :body        [user UserRegistration]
+    :summary     "register a new user"
+    (auth/register! req user))
+
+  (POST "/login" req
+    :return         Result
+    :header-params  [authorization :- String]
+    :summary        "login the user and create a session"
+    (auth/login! req authorization))
+
+  (POST "/logout" []
+    :return         Result
+    :summary        "remove user session"
+    (auth/logout!))
+
+  (GET "/gallery/:owner/:name" []
+       :summary "display user image"
+       :path-params [name :- String]
+       (gallery/get-image name))
+
+  (GET "/list-thumbnails/:owner" []
+       :path-params [owner :- String]
+       :summary "list thumbnails for images in the gallery"
+       :return [Gallery]
+       (gallery/list-thumbnails owner))
+
+  (GET "/list-galleries" []
+      :summary "lists a thumbnail for each user"
+      :return [Gallery]
+      (gallery/list-galleries)))
+
+(defapi restricted-service-routes
+  {:swagger {:ui "/swagger-ui-private"
+             :spec "/swagger-private.json"
+             :data {:info {:version "1.0.0"
+                           :title "Picture Gallery API"
+                           :description "Private Services"}}}}
+  (POST "/upload" req
+        :multipart-params [file :- TempFileUpload]
+        :middleware [wrap-multipart-params]
+        :summary "handles image upload"
+        :return Result
+        (upload/save-image! (:identity req) file))
+
+  (POST "/delete-image" req
+        :body-params [image-name :- String thumb-name :- String]
+        :summary "delete the specified file from the database"
+        :return Result
+        (gallery/delete-image! (:identity req) thumb-name image-name))
+
+  (POST "/delete-account" req
+        (auth/delete-account! (:identity req))))
