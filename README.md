@@ -6,8 +6,8 @@ generated using Luminus version `2.9.10.12`
 
 ## Prerequisites
 
-[Leiningen][lein] 2.0 or above
-[PostgreSQL][postgresql]
+Leiningen 2.0 or above
+PostgreSQL
 
 ## Development
 Database initialization:
